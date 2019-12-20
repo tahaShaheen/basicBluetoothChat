@@ -18,7 +18,10 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import org.w3c.dom.Text;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -30,12 +33,17 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_COARSE_LOCATION_PERMISSION = 2;
     BluetoothAdapter bluetoothAdapter;
     private String deviceOldName;
+    private TextView textView; String appendedString ="";
+    private String deviceNameToSearch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        deviceNameToSearch = getString(R.string.DEVICE_NAME_TO_SEARCH);
+
+        textView = findViewById(R.id.textView);
         setUpBluetooth();
     }
 
@@ -76,16 +84,20 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(BT_BroadcastReceiver, intentFilter);
 
-        ArrayList<BluetoothDevice> pairedDevices = lookAtPairedDevices("TAHA");
+        ArrayList<BluetoothDevice> pairedDevices = lookAtPairedDevices(deviceNameToSearch);
 
         if (pairedDevices != null) {
             Log.d(TAG, "Found some paired devices with the name you inserted:");
             for (int i = 0; i < pairedDevices.size(); i++) {
-                Log.d(TAG, pairedDevices.get(i).getName() + "; " + pairedDevices.get(i).getAddress());
+                String deviceName = pairedDevices.get(i).getName();
+                String deviceHardwareAddress = pairedDevices.get(i).getAddress();
+                Log.d(TAG, deviceName + "; " + deviceHardwareAddress);
+                appendedString = appendedString + deviceName + "; " +deviceHardwareAddress + "\n";
             }
+            textView.setText(appendedString);
         } else {
             Log.d(TAG, "Gonna have to look for devices.");
-            checkPermissions();
+            checkPermissionsAndLocateDevices();
         }
     }
 
@@ -120,12 +132,14 @@ public class MainActivity extends AppCompatActivity {
                     String deviceName = device.getName();
                     String deviceHardwareAddress = device.getAddress(); // MAC address
                     Log.d(TAG, "Device found: " + deviceName + "; " + deviceHardwareAddress);
+                    appendedString = appendedString + deviceName + "; " +deviceHardwareAddress + "\n";
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_STARTED:
                     Log.d(TAG, "Discovery started");
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
                     Log.d(TAG, "Discovery finished");
+                    textView.setText(appendedString);
                     break;
             }
         }
@@ -160,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
-    private void checkPermissions() {
+    private void checkPermissionsAndLocateDevices() {
         Log.d(TAG, "Going to start looking for devices");
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.d(TAG, "Looks like we don't have permissions");

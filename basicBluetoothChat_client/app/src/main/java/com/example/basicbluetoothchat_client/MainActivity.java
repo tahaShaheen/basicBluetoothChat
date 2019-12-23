@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        deviceNameToSearch = getString(R.string.DEVICE_NAME_TO_SEARCH);
+        deviceNameToSearch = getString(R.string.Robochotu_face);
 
         textView = findViewById(R.id.textView);
         setUpBluetooth();
@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, bluetoothAdapter.getName());
         deviceOldName = bluetoothAdapter.getName();
-        bluetoothAdapter.setName("Robochotu_remote");
+        bluetoothAdapter.setName(getString(R.string.Robochotu_remote));
 
         IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         intentFilter.addAction(BluetoothDevice.ACTION_FOUND);

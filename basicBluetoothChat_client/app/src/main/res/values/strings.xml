@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">basicBluetoothChat_client</string>
-    <string name="DEVICE_NAME_TO_SEARCH">TAHA</string>
+    <string name="UUID">93e461cc-80a6-44860-af1d-8e00fa330f04</string>
+    <string name="Robochotu_remote">Robochotu_remote</string>
+    <string name="Robochotu_face">Robochotu_face</string>
 </resources>

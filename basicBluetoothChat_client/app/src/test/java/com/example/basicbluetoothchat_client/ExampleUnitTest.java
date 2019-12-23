@@ -1,4 +1,4 @@
-package com.example.basicbluetoothchat;
+package com.example.basicbluetoothchat_client;
 
 import org.junit.Test;
 

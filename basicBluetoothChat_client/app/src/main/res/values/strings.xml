@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">basicBluetoothChat</string>
+    <string name="app_name">basicBluetoothChat_client</string>
     <string name="DEVICE_NAME_TO_SEARCH">TAHA</string>
 </resources>

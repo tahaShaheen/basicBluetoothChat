@@ -187,6 +187,7 @@ public class MainActivity extends AppCompatActivity {
 //                    manageMyConnectedSocket(socket);
                     try {
                         mmServerSocket.close();
+                        Log.d(TAG, "Socket's close() method successful");
                     } catch (IOException e) {
                         Log.d(TAG, "Socket's close() method failed");
                     }
@@ -201,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "Closing the connect socket and causing the thread to finish.");
             try {
                 mmServerSocket.close();
+                Log.d(TAG, "Closed the connect socket");
             } catch (IOException e) {
                 Log.d(TAG, "Could not close the connect socket");
             }

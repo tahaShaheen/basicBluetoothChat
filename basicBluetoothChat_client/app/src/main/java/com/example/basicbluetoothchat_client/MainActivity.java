@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -19,8 +20,10 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -77,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(BT_BroadcastReceiver, intentFilter);
 
         deviceNameComponentToSearch = getString(R.string.ROBOCHOTU_FACE);
-        deviceNameComponentToSearch = "-";
 
         lookAtPairedDevices(deviceNameComponentToSearch);
     }
@@ -116,10 +118,7 @@ public class MainActivity extends AppCompatActivity {
                     String deviceName = device.getName();
                     String deviceHardwareAddress = device.getAddress(); // MAC address
                     Log.d(TAG, "Device found: " + deviceName + "; " + deviceHardwareAddress);
-                    if(deviceName == null){
-                        deviceName = getString(R.string.NULL_NAME_ERROR);
-                    }
-                    if(deviceName.contains(deviceNameComponentToSearch) || deviceName.equals(getString(R.string.NULL_NAME_ERROR))){
+                    if(deviceName == null || deviceName.contains(deviceNameComponentToSearch)){
                         Log.d(TAG, "Found a device with name "+ deviceNameComponentToSearch);
                         potentialFaceDevices.add(device);
                     }
@@ -137,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
     };
 
 
-    private void lookAtDevicesFound(ArrayList<BluetoothDevice> devicesToDisplay, boolean deviceListIsFromPairedDevices){
+    private void lookAtDevicesFound(final ArrayList<BluetoothDevice> devicesToDisplay, boolean deviceListIsFromPairedDevices){
         if(devicesToDisplay.isEmpty()){
             Log.d(TAG, "No devices with name " + deviceNameComponentToSearch + " found.");
                 // setup the alert builder
@@ -161,7 +160,14 @@ public class MainActivity extends AppCompatActivity {
             final ArrayList<String> listOfNames = new ArrayList<>();
             final ArrayList<String> listOfMACAddresses = new ArrayList<>();
             for (int i =0; i < devicesToDisplay.size(); i++){
-                listOfNames.add(devicesToDisplay.get(i).getName());
+
+                if(devicesToDisplay.get(i).getName() == null){
+                    listOfNames.add(getString(R.string.NULL_NAME_ERROR));
+                }
+                else{
+                    listOfNames.add(devicesToDisplay.get(i).getName());
+                }
+
                 listOfMACAddresses.add(devicesToDisplay.get(i).getAddress());
             }
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -175,6 +181,8 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(DialogInterface dialog, int deviceSelected) {
                     Log.d(TAG, deviceSelected + " was clicked. It has name " + listOfNames.get(deviceSelected) + " and MAC Address "+ listOfMACAddresses.get(deviceSelected));
+                    ConnectThread connectThread = new ConnectThread(devicesToDisplay.get(deviceSelected));
+                    connectThread.start();
                 }
             });
 
@@ -286,4 +294,72 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         unregisterReceiver(BT_BroadcastReceiver);
     }
+
+
+    private class ConnectThread extends Thread {
+        private final BluetoothSocket mmSocket;
+        private final BluetoothDevice mmDevice;
+
+        public ConnectThread(BluetoothDevice device) {
+            Log.d(TAG, "Creating a thread for trying to connect to server devices");
+            // Use a temporary object that is later assigned to mmSocket
+            // because mmSocket is final.
+            BluetoothSocket tmp = null;
+            mmDevice = device;
+
+            try {
+                // Get a BluetoothSocket to connect with the given BluetoothDevice.
+                // MY_UUID is the app's UUID string, also used in the server code.
+                UUID MY_UUID = UUID.fromString(getString(R.string.UUID));
+                tmp = mmDevice.createRfcommSocketToServiceRecord(MY_UUID);
+                Log.d(TAG, "Trying to create a Bluetooth Client Socket");
+            } catch (IOException e) {
+                Log.d(TAG, "Socket's create() method failed");
+            }
+            mmSocket = tmp;
+        }
+
+        @Override
+        public void run() {
+
+            Log.d(TAG, "Cancel discovery because it otherwise slows down the connection");
+            Log.d(TAG, "cancel discovery: " + bluetoothAdapter.cancelDiscovery());
+
+            try {
+                Log.d(TAG, "Attempting connection...");
+                // Connect to the remote device through the socket. This call blocks
+                // until it succeeds or throws an exception.
+                mmSocket.connect();
+            } catch (IOException connectException) {
+                Log.d(TAG, "Unable to connect; closing the socket and returning");
+                try {
+                    mmSocket.close();
+                    Log.d(TAG, "Socket's close() method successful");
+                } catch (IOException closeException) {
+                    Log.d(TAG, "Socket's close() method failed");
+                }
+                return;
+            }
+
+            Log.d(TAG, "Connection attempt successful!");
+            // The connection attempt succeeded. Perform work associated with
+            // the connection in a separate thread.
+//            manageMyConnectedSocket(mmSocket);
+        }
+
+        // Closes the client socket and causes the thread to finish.
+        public void cancel() {
+            Log.d(TAG, "Closing the connect socket and causing the thread to finish.");
+            try {
+                mmSocket.close();
+                Log.d(TAG, "Closed the client socket");
+            } catch (IOException e) {
+                Log.d(TAG, "Could not close the client socket");
+            }
+        }
+    }
+
+
+
+
 }

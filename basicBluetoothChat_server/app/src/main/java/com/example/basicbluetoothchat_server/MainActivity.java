@@ -189,7 +189,8 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "A connection was accepted!");
                     // A connection was accepted. Perform work associated with
                     // the connection in a separate thread.
-                    manageMyConnectedSocket(socket);
+                    ManageMyConnectedSocket manageMyConnectedSocket = new ManageMyConnectedSocket(socket);
+                    manageMyConnectedSocket.start();
                     try {
                         mmServerSocket.close();
                         Log.d(TAG, "Socket's close() method successful");
@@ -213,33 +214,43 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void manageMyConnectedSocket(BluetoothSocket socket){
+    private class ManageMyConnectedSocket extends Thread{
 
-        final int MESSAGE_READ = 0;
-        final int MESSAGE_WRITE = 1;
-        final int MESSAGE_TOAST = 2;
+        private BluetoothSocket mmSocket;
 
-        Handler handler = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(@NonNull Message msg) {
+        public ManageMyConnectedSocket(BluetoothSocket socket) {
+            mmSocket = socket;
+        }
 
-                switch (msg.what){
-                    case MESSAGE_READ:
-                        Log.d(TAG, "MESSAGE_READ");
-                        break;
-                    case MESSAGE_WRITE:
-                        Log.d(TAG, "MESSAGE_WRITE");
-                        break;
-                    case MESSAGE_TOAST:
-                        Log.d(TAG, "MESSAGE_TOAST");
-                        break;
+        @Override
+        public void run() {
+
+            final int MESSAGE_READ = 0;
+            final int MESSAGE_WRITE = 1;
+            final int MESSAGE_TOAST = 2;
+
+            Handler handler = new Handler(Looper.getMainLooper()) {
+                @Override
+                public void handleMessage(@NonNull Message msg) {
+
+                    switch (msg.what) {
+                        case MESSAGE_READ:
+                            Log.d(TAG, "MESSAGE_READ");
+                            break;
+                        case MESSAGE_WRITE:
+                            Log.d(TAG, "MESSAGE_WRITE");
+                            break;
+                        case MESSAGE_TOAST:
+                            Log.d(TAG, "MESSAGE_TOAST");
+                            break;
+                    }
+                    super.handleMessage(msg);
                 }
-                super.handleMessage(msg);
-            }
-        };
+            };
 
-        MyBluetoothService myBluetoothService = new MyBluetoothService(socket, handler);
-
+            MyBluetoothService myBluetoothService = new MyBluetoothService(mmSocket, handler);
+            super.run();
+        }
     }
 
 }

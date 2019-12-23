@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, bluetoothAdapter.getName());
         deviceOldName = bluetoothAdapter.getName();
-        bluetoothAdapter.setName(getString(R.string.Robochotu_remote));
+        bluetoothAdapter.setName(getString(R.string.ROBOCHOTU_REMOTE));
 
         IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         intentFilter.addAction(BluetoothDevice.ACTION_FOUND);
@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(BT_BroadcastReceiver, intentFilter);
 
-        deviceNameComponentToSearch = getString(R.string.Robochotu_face);
+        deviceNameComponentToSearch = getString(R.string.ROBOCHOTU_FACE);
         deviceNameComponentToSearch = "-";
 
         lookAtPairedDevices(deviceNameComponentToSearch);
@@ -116,7 +116,10 @@ public class MainActivity extends AppCompatActivity {
                     String deviceName = device.getName();
                     String deviceHardwareAddress = device.getAddress(); // MAC address
                     Log.d(TAG, "Device found: " + deviceName + "; " + deviceHardwareAddress);
-                    if(deviceName.contains(deviceNameComponentToSearch)){
+                    if(deviceName == null){
+                        deviceName = getString(R.string.NULL_NAME_ERROR);
+                    }
+                    if(deviceName.contains(deviceNameComponentToSearch) || deviceName.equals(getString(R.string.NULL_NAME_ERROR))){
                         Log.d(TAG, "Found a device with name "+ deviceNameComponentToSearch);
                         potentialFaceDevices.add(device);
                     }
@@ -167,6 +170,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 builder.setTitle("Multiple devices found");
             }
+
             builder.setItems(listOfNames.toArray(new String[0]), new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int deviceSelected) {
@@ -180,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
                     checkPermissionsAndLocateDevices();
                 }
             });
+            builder.setNegativeButton("Stop looking", null);
             builder.show();
         }
     }
@@ -197,6 +202,7 @@ public class MainActivity extends AppCompatActivity {
                 String deviceName = device.getName();
                 String deviceHardwareAddress = device.getAddress(); // MAC address
                 Log.d(TAG, deviceName + "; " + deviceHardwareAddress);
+
                 if (deviceName.contains(nameToSearch)) {
                     pairedDevicesWithName.add(device);
                 }

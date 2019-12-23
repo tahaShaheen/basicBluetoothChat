@@ -18,7 +18,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -30,17 +29,13 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_COARSE_LOCATION_PERMISSION = 2;
     BluetoothAdapter bluetoothAdapter;
     private String deviceOldName;
-    private TextView textView; String appendedString ="";
-    private String deviceNameToSearch;
+    private String deviceNameComponentToSearch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        deviceNameToSearch = getString(R.string.Robochotu_face);
-
-        textView = findViewById(R.id.textView);
         setUpBluetooth();
     }
 
@@ -81,24 +76,16 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
         registerReceiver(BT_BroadcastReceiver, intentFilter);
 
-        ArrayList<BluetoothDevice> pairedDevices = lookAtPairedDevices(deviceNameToSearch);
+        deviceNameComponentToSearch = getString(R.string.Robochotu_face);
+        deviceNameComponentToSearch = "-";
 
-        if (pairedDevices != null) {
-            Log.d(TAG, "Found some paired devices with the name you inserted:");
-            for (int i = 0; i < pairedDevices.size(); i++) {
-                String deviceName = pairedDevices.get(i).getName();
-                String deviceHardwareAddress = pairedDevices.get(i).getAddress();
-                Log.d(TAG, deviceName + "; " + deviceHardwareAddress);
-                appendedString = appendedString + deviceName + "; " +deviceHardwareAddress + "\n";
-            }
-            textView.setText(appendedString);
-        } else {
-            Log.d(TAG, "Gonna have to look for devices.");
-            checkPermissionsAndLocateDevices();
-        }
+        lookAtPairedDevices(deviceNameComponentToSearch);
     }
 
     private BroadcastReceiver BT_BroadcastReceiver = new BroadcastReceiver() {
+
+        ArrayList<BluetoothDevice> potentialFaceDevices = new ArrayList<>();
+
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "BT_BroadcastReceiver");
@@ -129,29 +116,82 @@ public class MainActivity extends AppCompatActivity {
                     String deviceName = device.getName();
                     String deviceHardwareAddress = device.getAddress(); // MAC address
                     Log.d(TAG, "Device found: " + deviceName + "; " + deviceHardwareAddress);
-                    appendedString = appendedString + deviceName + "; " +deviceHardwareAddress + "\n";
+                    if(deviceName.contains(deviceNameComponentToSearch)){
+                        Log.d(TAG, "Found a device with name "+ deviceNameComponentToSearch);
+                        potentialFaceDevices.add(device);
+                    }
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_STARTED:
                     Log.d(TAG, "Discovery started");
+                    potentialFaceDevices.clear();
                     break;
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
                     Log.d(TAG, "Discovery finished");
-                    textView.setText(appendedString);
+                    lookAtDevicesFound(potentialFaceDevices, false);
                     break;
             }
         }
     };
 
-    private ArrayList<BluetoothDevice> lookAtPairedDevices(String nameToSearch) {
+
+    private void lookAtDevicesFound(ArrayList<BluetoothDevice> devicesToDisplay, boolean deviceListIsFromPairedDevices){
+        if(devicesToDisplay.isEmpty()){
+            Log.d(TAG, "No devices with name " + deviceNameComponentToSearch + " found.");
+                // setup the alert builder
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("No " + ((deviceListIsFromPairedDevices) ? "paired" : "nearby") + " devices found");
+            if ((deviceListIsFromPairedDevices)) {
+                builder.setMessage("Would you like to look at nearby devices?");
+            } else {
+                builder.setMessage("Would you like to continue to look?");
+            }
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        checkPermissionsAndLocateDevices();
+                    }
+                });
+                builder.setNegativeButton("No", null);
+                builder.show();
+        }
+        else {
+            final ArrayList<String> listOfNames = new ArrayList<>();
+            final ArrayList<String> listOfMACAddresses = new ArrayList<>();
+            for (int i =0; i < devicesToDisplay.size(); i++){
+                listOfNames.add(devicesToDisplay.get(i).getName());
+                listOfMACAddresses.add(devicesToDisplay.get(i).getAddress());
+            }
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            if ((deviceListIsFromPairedDevices)) {
+                builder.setTitle("Multiple devices paired");
+            } else {
+                builder.setTitle("Multiple devices found");
+            }
+            builder.setItems(listOfNames.toArray(new String[0]), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int deviceSelected) {
+                    Log.d(TAG, deviceSelected + " was clicked. It has name " + listOfNames.get(deviceSelected) + " and MAC Address "+ listOfMACAddresses.get(deviceSelected));
+                }
+            });
+
+            builder.setPositiveButton(((deviceListIsFromPairedDevices) ? "Look for devices nearby?" : "Look again?") , new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    checkPermissionsAndLocateDevices();
+                }
+            });
+            builder.show();
+        }
+    }
+
+    private void lookAtPairedDevices(String nameToSearch) {
 
         Log.d(TAG, "Currently paired devices:");
+        ArrayList<BluetoothDevice> pairedDevicesWithName = new ArrayList<>();
 
         Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
 
-        if (pairedDevices.size() > 0) {
-
-            ArrayList<BluetoothDevice> pairedDevicesWithName = new ArrayList<>();
-
+        if (!pairedDevices.isEmpty()) {
             // There are paired devices. Get the name and address of each paired device.
             for (BluetoothDevice device : pairedDevices) {
                 String deviceName = device.getName();
@@ -161,14 +201,18 @@ public class MainActivity extends AppCompatActivity {
                     pairedDevicesWithName.add(device);
                 }
             }
-            if (pairedDevicesWithName.size() > 1) {
-                return pairedDevicesWithName;
-            } else {
-                return null;
-            }
-
         }
-        return null;
+
+        if (!pairedDevicesWithName.isEmpty()) {
+            Log.d(TAG, "Found some paired devices with the name you inserted:");
+            for (int i = 0; i < pairedDevicesWithName.size(); i++) {
+                String deviceName = pairedDevicesWithName.get(i).getName();
+                String deviceHardwareAddress = pairedDevicesWithName.get(i).getAddress();
+                Log.d(TAG, deviceName + "; " + deviceHardwareAddress);
+            }
+        }
+
+        lookAtDevicesFound(pairedDevicesWithName, true);
     }
 
     private void checkPermissionsAndLocateDevices() {

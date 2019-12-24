@@ -22,6 +22,12 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -38,10 +44,35 @@ public class MainActivity extends AppCompatActivity {
     private String deviceOldName;
     private String deviceNameComponentToSearch;
 
+    private TextView textView;
+    private EditText editText;
+    private Button button;
+
+    private ManageMyConnectedSocket manageMyConnectedSocket;
+    private boolean connectedToBluetoothDevice = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        editText = findViewById(R.id.editText);
+        button = findViewById(R.id.sendButton);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String message = editText.getText().toString();
+
+                Log.d(TAG, "Edittext message: " + message);
+
+
+                if(!message.isEmpty() && connectedToBluetoothDevice){
+                    manageMyConnectedSocket.sendMessageToBluetooth(message);
+                }
+            }
+        });
 
         setUpBluetooth();
     }
@@ -81,6 +112,8 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothDevice.ACTION_FOUND);
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
         intentFilter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        intentFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        intentFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         registerReceiver(BT_BroadcastReceiver, intentFilter);
 
         deviceNameComponentToSearch = getString(R.string.ROBOCHOTU_FACE);
@@ -115,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
                             break;
                     }
                     break;
+
                 case BluetoothDevice.ACTION_FOUND:
                     // Discovery has found a device. Get the BluetoothDevice
                     // object and its info from the Intent.
@@ -127,13 +161,25 @@ public class MainActivity extends AppCompatActivity {
                         potentialFaceDevices.add(device);
                     }
                     break;
+
                 case BluetoothAdapter.ACTION_DISCOVERY_STARTED:
                     Log.d(TAG, "Discovery started");
                     potentialFaceDevices.clear();
                     break;
+
                 case BluetoothAdapter.ACTION_DISCOVERY_FINISHED:
                     Log.d(TAG, "Discovery finished");
                     lookAtDevicesFound(potentialFaceDevices, false);
+                    break;
+
+                case BluetoothDevice.ACTION_ACL_CONNECTED:
+                    Log.d(TAG, "Bluetooth device connected");
+                    connectedToBluetoothDevice = true;
+                    break;
+
+                case BluetoothDevice.ACTION_ACL_DISCONNECTED:
+                    Log.d(TAG, "Bluetooth device disconnected");
+                    connectedToBluetoothDevice = false;
                     break;
             }
         }
@@ -346,7 +392,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             Log.d(TAG, "Connection attempt successful!");
-            ManageMyConnectedSocket manageMyConnectedSocket = new ManageMyConnectedSocket(mmSocket);
+            manageMyConnectedSocket = new ManageMyConnectedSocket(mmSocket);
             manageMyConnectedSocket.start();
             // The connection attempt succeeded. Perform work associated with
             // the connection in a separate thread.
@@ -379,22 +425,20 @@ public class MainActivity extends AppCompatActivity {
             Handler handler = new Handler(Looper.getMainLooper()) {
                 @Override
                 public void handleMessage(@NonNull Message msg) {
-                    byte[] bufferBytes = (byte[]) msg.obj;
-                    String bufferString = "";
-                    try {
-                        bufferString = new String(bufferBytes, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        Log.d(TAG, "Unable to convert bytes to String");
-                        e.printStackTrace();
-                    }
                     switch (msg.what) {
                         case MESSAGE_READ:
+                            byte[] readBuffer = (byte[]) msg.obj;
+                            // construct a string from the valid bytes in the buffer
+                            String readMessage = new String(readBuffer, 0, msg.arg1);
                             Log.d(TAG, "MESSAGE_READ");
-                            Log.d(TAG, bufferString);
+                            Log.d(TAG, readMessage);
+                            textView.setText(readMessage);
                             break;
                         case MESSAGE_WRITE:
+                            byte[] writeBuffer = (byte[]) msg.obj;
+                            String writeMessage = new String(writeBuffer);
                             Log.d(TAG, "MESSAGE_WRITE");
-                            Log.d(TAG, bufferString);
+                            Log.d(TAG, writeMessage);
                             break;
                         case MESSAGE_TOAST:
                             Log.d(TAG, "MESSAGE_TOAST");

@@ -18,6 +18,9 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.IOException;
@@ -34,11 +37,36 @@ public class MainActivity extends AppCompatActivity {
     BluetoothAdapter bluetoothAdapter;
     private String deviceOldName;
 
+    private TextView textView;
+    private EditText editText;
+    private Button button;
+
+    private ManageMyConnectedSocket manageMyConnectedSocket;
+    private boolean connectedToBluetoothDevice = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        editText = findViewById(R.id.editText);
+        button = findViewById(R.id.sendButton);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String message = editText.getText().toString();
+
+                Log.d(TAG, "Edittext message: " + message);
+
+
+                if(!message.isEmpty() && connectedToBluetoothDevice){
+                    manageMyConnectedSocket.sendMessageToBluetooth(message);
+                }
+            }
+        });
 
         setUpBluetooth();
     }
@@ -66,6 +94,8 @@ public class MainActivity extends AppCompatActivity {
 
         IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         intentFilter.addAction(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED);
+        intentFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        intentFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         registerReceiver(BT_BroadcastReceiver, intentFilter);
     }
 
@@ -106,6 +136,15 @@ public class MainActivity extends AppCompatActivity {
                             Log.d(TAG, "The device isn't in discoverable mode and cannot receive connections.");
                             break;
                     }
+                    break;
+                case BluetoothDevice.ACTION_ACL_CONNECTED:
+                    Log.d(TAG, "Bluetooth device connected");
+                    connectedToBluetoothDevice = true;
+                    break;
+
+                case BluetoothDevice.ACTION_ACL_DISCONNECTED:
+                    Log.d(TAG, "Bluetooth device disconnected");
+                    connectedToBluetoothDevice = false;
                     break;
             }
         }
@@ -190,9 +229,8 @@ public class MainActivity extends AppCompatActivity {
                     Log.d(TAG, "A connection was accepted!");
                     // A connection was accepted. Perform work associated with
                     // the connection in a separate thread.
-                    ManageMyConnectedSocket manageMyConnectedSocket = new ManageMyConnectedSocket(socket);
+                    manageMyConnectedSocket = new ManageMyConnectedSocket(socket);
                     manageMyConnectedSocket.start();
-                    manageMyConnectedSocket.sendMessageToBluetooth("Hello World");
                     try {
                         mmServerSocket.close();
                         Log.d(TAG, "Socket's close() method successful");
@@ -231,22 +269,20 @@ public class MainActivity extends AppCompatActivity {
             Handler handler = new Handler(Looper.getMainLooper()) {
                 @Override
                 public void handleMessage(@NonNull Message msg) {
-                    byte[] bufferBytes = (byte[]) msg.obj;
-                    String bufferString = "";
-                    try {
-                        bufferString = new String(bufferBytes, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        Log.d(TAG, "Unable to convert bytes to String");
-                        e.printStackTrace();
-                    }
                     switch (msg.what) {
                         case MESSAGE_READ:
+                            byte[] readBuffer = (byte[]) msg.obj;
+                            // construct a string from the valid bytes in the buffer
+                            String readMessage = new String(readBuffer, 0, msg.arg1);
                             Log.d(TAG, "MESSAGE_READ");
-                            Log.d(TAG, bufferString);
+                            Log.d(TAG, readMessage);
+                            textView.setText(readMessage);
                             break;
                         case MESSAGE_WRITE:
+                            byte[] writeBuffer = (byte[]) msg.obj;
+                            String writeMessage = new String(writeBuffer);
                             Log.d(TAG, "MESSAGE_WRITE");
-                            Log.d(TAG, bufferString);
+                            Log.d(TAG, writeMessage);
                             break;
                         case MESSAGE_TOAST:
                             Log.d(TAG, "MESSAGE_TOAST");

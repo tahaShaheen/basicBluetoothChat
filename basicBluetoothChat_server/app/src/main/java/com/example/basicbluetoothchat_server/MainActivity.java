@@ -14,7 +14,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
@@ -22,9 +21,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 
@@ -86,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
     private void turnOnDiscoverability() {
         Log.d(TAG, bluetoothAdapter.getName());
         deviceOldName = bluetoothAdapter.getName();
-        bluetoothAdapter.setName(getString(R.string.Robochotu_face));
+        bluetoothAdapter.setName(getString(R.string.Server_BT_Chat));
 
         Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, TIME_DURATION_FOR_DISCOVERABILITY); //turns on for 300 seconds
@@ -139,11 +138,13 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case BluetoothDevice.ACTION_ACL_CONNECTED:
                     Log.d(TAG, "Bluetooth device connected");
+                    Toast.makeText(context, "Bluetooth device connected", Toast.LENGTH_SHORT).show();
                     connectedToBluetoothDevice = true;
                     break;
 
                 case BluetoothDevice.ACTION_ACL_DISCONNECTED:
                     Log.d(TAG, "Bluetooth device disconnected");
+                    Toast.makeText(context, "Bluetooth device disconnected", Toast.LENGTH_SHORT).show();
                     connectedToBluetoothDevice = false;
                     break;
             }

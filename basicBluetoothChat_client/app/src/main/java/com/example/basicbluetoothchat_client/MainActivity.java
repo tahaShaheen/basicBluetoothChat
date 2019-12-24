@@ -26,11 +26,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-
-import org.w3c.dom.Text;
+import android.widget.Toast;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -106,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, bluetoothAdapter.getName());
         deviceOldName = bluetoothAdapter.getName();
-        bluetoothAdapter.setName(getString(R.string.ROBOCHOTU_REMOTE));
+        bluetoothAdapter.setName(getString(R.string.Client_BT_Chat));
 
         IntentFilter intentFilter = new IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED);
         intentFilter.addAction(BluetoothDevice.ACTION_FOUND);
@@ -116,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
         intentFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         registerReceiver(BT_BroadcastReceiver, intentFilter);
 
-        deviceNameComponentToSearch = getString(R.string.ROBOCHOTU_FACE);
+        deviceNameComponentToSearch = getString(R.string.Server_BT_Chat);
 
         lookAtPairedDevices(deviceNameComponentToSearch);
     }
@@ -174,11 +172,13 @@ public class MainActivity extends AppCompatActivity {
 
                 case BluetoothDevice.ACTION_ACL_CONNECTED:
                     Log.d(TAG, "Bluetooth device connected");
+                    Toast.makeText(context, "Bluetooth device connected", Toast.LENGTH_SHORT).show();
                     connectedToBluetoothDevice = true;
                     break;
 
                 case BluetoothDevice.ACTION_ACL_DISCONNECTED:
                     Log.d(TAG, "Bluetooth device disconnected");
+                    Toast.makeText(context, "Bluetooth device disconnected", Toast.LENGTH_SHORT).show();
                     connectedToBluetoothDevice = false;
                     break;
             }

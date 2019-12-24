@@ -168,11 +168,11 @@ public class MainActivity extends AppCompatActivity {
             case REQUEST_BT_DISCOVERABILITY_ENABLE:
                 if (resultCode == TIME_DURATION_FOR_DISCOVERABILITY) {
                     Log.d(TAG, "Discoverability enabled");
-                    lookForIncomingConnections();
                 }
                 else if (resultCode == RESULT_CANCELED) {
                     Log.d(TAG, "Unable to begin discoverability");
                 }
+                lookForIncomingConnections();
                 break;
         }
         super.onActivityResult(requestCode, resultCode, data);

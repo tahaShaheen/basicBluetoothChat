@@ -21,6 +21,7 @@ import android.util.Log;
 import android.widget.TextView;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.UUID;
 
 
@@ -175,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void run() {
-            BluetoothSocket socket = null;
+            BluetoothSocket socket;
             Log.d(TAG, "Listening until exception occurs or a socket is returned...");
             while (true) {
                 try {
@@ -191,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
                     // the connection in a separate thread.
                     ManageMyConnectedSocket manageMyConnectedSocket = new ManageMyConnectedSocket(socket);
                     manageMyConnectedSocket.start();
+                    manageMyConnectedSocket.sendMessageToBluetooth("Hello World");
                     try {
                         mmServerSocket.close();
                         Log.d(TAG, "Socket's close() method successful");
@@ -217,13 +219,10 @@ public class MainActivity extends AppCompatActivity {
     private class ManageMyConnectedSocket extends Thread{
 
         private BluetoothSocket mmSocket;
+        private MyBluetoothService myBluetoothService;
 
         public ManageMyConnectedSocket(BluetoothSocket socket) {
             mmSocket = socket;
-        }
-
-        @Override
-        public void run() {
 
             final int MESSAGE_READ = 0;
             final int MESSAGE_WRITE = 1;
@@ -232,13 +231,22 @@ public class MainActivity extends AppCompatActivity {
             Handler handler = new Handler(Looper.getMainLooper()) {
                 @Override
                 public void handleMessage(@NonNull Message msg) {
-
+                    byte[] bufferBytes = (byte[]) msg.obj;
+                    String bufferString = "";
+                    try {
+                        bufferString = new String(bufferBytes, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        Log.d(TAG, "Unable to convert bytes to String");
+                        e.printStackTrace();
+                    }
                     switch (msg.what) {
                         case MESSAGE_READ:
                             Log.d(TAG, "MESSAGE_READ");
+                            Log.d(TAG, bufferString);
                             break;
                         case MESSAGE_WRITE:
                             Log.d(TAG, "MESSAGE_WRITE");
+                            Log.d(TAG, bufferString);
                             break;
                         case MESSAGE_TOAST:
                             Log.d(TAG, "MESSAGE_TOAST");
@@ -248,9 +256,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             };
 
-            MyBluetoothService myBluetoothService = new MyBluetoothService(mmSocket, handler);
-            super.run();
+            myBluetoothService = new MyBluetoothService(mmSocket, handler);
+        }
+
+        public void sendMessageToBluetooth(String messageToSend){
+            myBluetoothService.write(messageToSend);
         }
     }
-
 }

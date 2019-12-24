@@ -12,16 +12,28 @@ import java.io.OutputStream;
 
 public class MyBluetoothService {
     private static final String TAG = "MY_APP_DEBUG_TAG";
-    private Handler handler; // handler that gets info from Bluetooth service
+    private Handler mmHandler; // handler that gets info from Bluetooth service
+    ConnectedThread connectedThread;
 
     // Defines several constants used when transmitting messages between the
     // service and the UI.
     private interface MessageConstants {
-        public static final int MESSAGE_READ = 0;
-        public static final int MESSAGE_WRITE = 1;
-        public static final int MESSAGE_TOAST = 2;
+        int MESSAGE_READ = 0;
+        int MESSAGE_WRITE = 1;
+        int MESSAGE_TOAST = 2;
 
         // ... (Add other message types here as needed.)
+    }
+
+    public MyBluetoothService(BluetoothSocket bluetoothSocket, Handler handler){
+        mmHandler = handler;
+        connectedThread = new ConnectedThread(bluetoothSocket);
+        connectedThread.start();
+    }
+
+    public void write(String messageToSend){
+        byte[] bytes = messageToSend.getBytes();
+        connectedThread.write(bytes);
     }
 
     private class ConnectedThread extends Thread {
@@ -65,7 +77,7 @@ public class MyBluetoothService {
                     // Read from the InputStream.
                     numBytes = mmInStream.read(mmBuffer);
                     // Send the obtained bytes to the UI activity.
-                    Message readMsg = handler.obtainMessage(
+                    Message readMsg = mmHandler.obtainMessage(
                             MessageConstants.MESSAGE_READ, numBytes, -1,
                             mmBuffer);
                     readMsg.sendToTarget();
@@ -83,7 +95,7 @@ public class MyBluetoothService {
                 mmOutStream.write(bytes);
 
                 // Share the sent message with the UI activity.
-                Message writtenMsg = handler.obtainMessage(
+                Message writtenMsg = mmHandler.obtainMessage(
                         MessageConstants.MESSAGE_WRITE, -1, -1, mmBuffer);
                 writtenMsg.sendToTarget();
             } catch (IOException e) {
@@ -91,11 +103,11 @@ public class MyBluetoothService {
 
                 // Send a failure message back to the activity.
                 Message writeErrorMsg =
-                        handler.obtainMessage(MessageConstants.MESSAGE_TOAST);
+                        mmHandler.obtainMessage(MessageConstants.MESSAGE_TOAST);
                 Bundle bundle = new Bundle();
                 bundle.putString("toast", "Couldn't send data to the other device");
                 writeErrorMsg.setData(bundle);
-                handler.sendMessage(writeErrorMsg);
+                mmHandler.sendMessage(writeErrorMsg);
             }
         }
 
@@ -110,4 +122,3 @@ public class MyBluetoothService {
         }
     }
 }
-

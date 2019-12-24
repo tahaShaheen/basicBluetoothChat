@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +13,7 @@ import java.io.OutputStream;
 public class MyBluetoothService {
     private static final String TAG = "MY_APP_DEBUG_TAG";
     private Handler mmHandler; // handler that gets info from Bluetooth service
+    ConnectedThread connectedThread;
 
     // Defines several constants used when transmitting messages between the
     // service and the UI.
@@ -27,8 +27,13 @@ public class MyBluetoothService {
 
     public MyBluetoothService(BluetoothSocket bluetoothSocket, Handler handler){
         mmHandler = handler;
-        ConnectedThread connectedThread = new ConnectedThread(bluetoothSocket);
+        connectedThread = new ConnectedThread(bluetoothSocket);
         connectedThread.start();
+    }
+
+    public void write(String messageToSend){
+        byte[] bytes = messageToSend.getBytes();
+        connectedThread.write(bytes);
     }
 
     private class ConnectedThread extends Thread {

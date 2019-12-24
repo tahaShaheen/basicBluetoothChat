@@ -18,16 +18,20 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = "Main-Activity";
+    private static final String TAG = "MY_APP_DEBUG_TAG";
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_COARSE_LOCATION_PERMISSION = 2;
     BluetoothAdapter bluetoothAdapter;
@@ -342,9 +346,10 @@ public class MainActivity extends AppCompatActivity {
             }
 
             Log.d(TAG, "Connection attempt successful!");
+            ManageMyConnectedSocket manageMyConnectedSocket = new ManageMyConnectedSocket(mmSocket);
+            manageMyConnectedSocket.start();
             // The connection attempt succeeded. Perform work associated with
             // the connection in a separate thread.
-//            manageMyConnectedSocket(mmSocket);
         }
 
         // Closes the client socket and causes the thread to finish.
@@ -359,7 +364,51 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private class ManageMyConnectedSocket extends Thread{
 
+        private BluetoothSocket mmSocket;
+        private MyBluetoothService myBluetoothService;
 
+        public ManageMyConnectedSocket(BluetoothSocket socket) {
+            mmSocket = socket;
 
+            final int MESSAGE_READ = 0;
+            final int MESSAGE_WRITE = 1;
+            final int MESSAGE_TOAST = 2;
+
+            Handler handler = new Handler(Looper.getMainLooper()) {
+                @Override
+                public void handleMessage(@NonNull Message msg) {
+                    byte[] bufferBytes = (byte[]) msg.obj;
+                    String bufferString = "";
+                    try {
+                        bufferString = new String(bufferBytes, "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        Log.d(TAG, "Unable to convert bytes to String");
+                        e.printStackTrace();
+                    }
+                    switch (msg.what) {
+                        case MESSAGE_READ:
+                            Log.d(TAG, "MESSAGE_READ");
+                            Log.d(TAG, bufferString);
+                            break;
+                        case MESSAGE_WRITE:
+                            Log.d(TAG, "MESSAGE_WRITE");
+                            Log.d(TAG, bufferString);
+                            break;
+                        case MESSAGE_TOAST:
+                            Log.d(TAG, "MESSAGE_TOAST");
+                            break;
+                    }
+                    super.handleMessage(msg);
+                }
+            };
+
+            myBluetoothService = new MyBluetoothService(mmSocket, handler);
+        }
+
+        public void sendMessageToBluetooth(String messageToSend){
+            myBluetoothService.write(messageToSend);
+        }
+    }
 }

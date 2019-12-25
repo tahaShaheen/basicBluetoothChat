@@ -33,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_BT_DISCOVERABILITY_ENABLE = 2;
     private static final int TIME_DURATION_FOR_DISCOVERABILITY = 30;
-    BluetoothAdapter bluetoothAdapter;
+    private BluetoothAdapter bluetoothAdapter;
     private String deviceOldName;
 
     private TextView textView;
@@ -194,6 +194,11 @@ public class MainActivity extends AppCompatActivity {
         bluetoothAdapter.setName(deviceOldName);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(BT_BroadcastReceiver);
+    }
 
     private class AcceptThread extends Thread {
 

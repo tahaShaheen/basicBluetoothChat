@@ -39,5 +39,16 @@
         app:layout_constraintVertical_bias="0.2"
         android:text="send"
         />
+    <Button
+        android:id="@+id/searchBTButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/sendButton"
+        app:layout_constraintVertical_bias="0.2"
+        android:text="BT Search"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MY_APP_DEBUG_TAG";
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_COARSE_LOCATION_PERMISSION = 2;
-    BluetoothAdapter bluetoothAdapter;
+    private BluetoothAdapter bluetoothAdapter;
     private String deviceOldName;
     private String deviceNameComponentToSearch;
 

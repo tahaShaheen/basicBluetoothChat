@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">server</string>
+    <string name="app_name">enhancedServer</string>
     <string name="UUID">93e461cc-80a6-44860-af1d-8e00fa330f04</string>
     <string name="Client_BT_Chat">Client_BT_Chat</string>
     <string name="Server_BT_Chat">Server_BT_Chat</string>

@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MY_APP_DEBUG_TAG";
     private static final int REQUEST_ENABLE_BT = 1;
     private static final int REQUEST_BT_DISCOVERABILITY_ENABLE = 2;
-    private static final int TIME_DURATION_FOR_DISCOVERABILITY = 300;
+    private static final int TIME_DURATION_FOR_DISCOVERABILITY = 30;
     BluetoothAdapter bluetoothAdapter;
     private String deviceOldName;
 
@@ -126,9 +126,11 @@ public class MainActivity extends AppCompatActivity {
                     int scanMode = intent.getIntExtra(BluetoothAdapter.EXTRA_SCAN_MODE, BluetoothAdapter.ERROR);
                     switch(scanMode){
                         case BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE:
+                            Toast.makeText(context, "The device is in discoverable mode", Toast.LENGTH_SHORT).show();
                             Log.d(TAG, "The device is in discoverable mode.");
                             break;
                         case (BluetoothAdapter.SCAN_MODE_CONNECTABLE):
+                            Toast.makeText(context, "The device isn't in discoverable mode but can still receive connections", Toast.LENGTH_SHORT).show();
                             Log.d(TAG, "The device isn't in discoverable mode but can still receive connections.");
                             break;
                         case BluetoothAdapter.SCAN_MODE_NONE:
@@ -171,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 else if (resultCode == RESULT_CANCELED) {
                     Log.d(TAG, "Unable to begin discoverability");
+                    Toast.makeText(this, "The device isn't in discoverable mode but can still receive connections", Toast.LENGTH_SHORT).show();
                 }
                 lookForIncomingConnections();
                 break;

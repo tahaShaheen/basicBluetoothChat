@@ -147,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
                 case BluetoothDevice.ACTION_ACL_DISCONNECTED:
                     Log.d(TAG, "Bluetooth device disconnected");
                     Toast.makeText(context, "Bluetooth device disconnected", Toast.LENGTH_SHORT).show();
+                    lookForIncomingConnections();
                     connectedToBluetoothDevice = false;
                     break;
             }
@@ -185,7 +186,6 @@ public class MainActivity extends AppCompatActivity {
         AcceptThread acceptIncomingConnectionThread = new AcceptThread();
         acceptIncomingConnectionThread.start();
     }
-
 
     @Override
     protected void onStop() {
